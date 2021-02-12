@@ -99,6 +99,14 @@ int sendApplicationDescription() {
     return 0;
 }
 
+void clearSessionData() {
+    SessionPersistDataOpaque d = {};
+    const int r = Spark_Save(&d, sizeof(d), SparkCallbacks::PERSIST_SESSION, nullptr);
+    if (r < 0) {
+        LOG(ERROR, "Spark_Save() failed: %d", r);
+    }
+}
+
 } // namespace particle
 
 extern uint8_t feature_cloud_udp;
