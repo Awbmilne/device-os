@@ -100,11 +100,14 @@ int sendApplicationDescription() {
 }
 
 void clearSessionData() {
+#if HAL_PLATFORM_CLOUD_UDP
+    LOG(INFO, "Clearing session data");
     SessionPersistDataOpaque d = {};
     const int r = Spark_Save(&d, sizeof(d), SparkCallbacks::PERSIST_SESSION, nullptr);
     if (r < 0) {
         LOG(ERROR, "Spark_Save() failed: %d", r);
     }
+#endif
 }
 
 } // namespace particle
