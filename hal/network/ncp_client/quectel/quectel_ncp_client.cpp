@@ -1066,7 +1066,8 @@ int QuectelNcpClient::initReady(ModemState state) {
     CHECK_PARSER(parser_.execCommand("AT+QCFG=\"cmux/urcport\",1"));
 
     // Enable packet domain error reporting
-    CHECK_PARSER_OK(parser_.execCommand("AT+CGEREP=1,0"));
+    // Ignore error responses, this command is known to fail sometimes
+    CHECK_PARSER(parser_.execCommand("AT+CGEREP=1,0"));
 
     return SYSTEM_ERROR_NONE;
 }
@@ -1333,19 +1334,22 @@ int QuectelNcpClient::enterDataMode() {
     muxerDataStream_->enabled(true);
 
     CHECK_TRUE(muxer_.setChannelDataHandler(QUECTEL_NCP_PPP_CHANNEL, muxerDataStream_->channelDataCb, muxerDataStream_.get()) == 0, SYSTEM_ERROR_INTERNAL);
-    // Send data mode break
-    const char breakCmd[] = "+++";
-    muxerDataStream_->write(breakCmd, sizeof(breakCmd) - 1);
-    skipAll(muxerDataStream_.get(), 1000);
+    const int attempts = 5;
+    for (int i = 0; i < attempts; i++) {
+        // Send data mode break
+        const char breakCmd[] = "+++";
+        muxerDataStream_->write(breakCmd, sizeof(breakCmd) - 1);
+        skipAll(muxerDataStream_.get(), 100);
 
-    // Initialize AT parser
-    auto parserConf = AtParserConfig()
-            .stream(muxerDataStream_.get())
-            .commandTerminator(AtCommandTerminator::CRLF);
-    dataParser_.destroy();
-    CHECK(dataParser_.init(std::move(parserConf)));
+        // Initialize AT parser
+        auto parserConf = AtParserConfig()
+                .stream(muxerDataStream_.get())
+                .commandTerminator(AtCommandTerminator::CRLF);
+        dataParser_.destroy();
+        CHECK(dataParser_.init(std::move(parserConf)));
 
-    CHECK(waitAtResponse(dataParser_, 5000));
+        CHECK(waitAtResponse(dataParser_, 1000));
+    }
 
     const char connectResponse[] = "CONNECT";
 
