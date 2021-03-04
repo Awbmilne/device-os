@@ -47,19 +47,29 @@ using namespace particle;
 
 static bool system_sleep_network_suspend(network_interface_index index) {
     bool resume = false;
-    // Disconnect from network
-    if (network_connecting(index, 0, NULL) || network_ready(index, 0, NULL)) {
-        if (network_connecting(index, 0, NULL)) {
-            network_connect_cancel(index, 1, 0, 0);
+
+// FIXME: Dirty hack. For platforms support both Wi-Fi and Cellular interfaces,
+// we simply bypass the Wi-Fi interface 
+#if HAL_PLATFORM_WIFI && HAL_PLATFORM_CELLULAR
+    if (index != NETWORK_INTERFACE_WIFI_STA)
+#endif
+    {
+        // Disconnect from network
+        if (network_connecting(index, 0, NULL) || network_ready(index, 0, NULL)) {
+            if (network_connecting(index, 0, NULL)) {
+                network_connect_cancel(index, 1, 0, 0);
+            }
+            network_disconnect(index, NETWORK_DISCONNECT_REASON_SLEEP, NULL);
+            resume = true;
         }
-        network_disconnect(index, NETWORK_DISCONNECT_REASON_SLEEP, NULL);
-        resume = true;
     }
+
 #if PLATFORM_GEN == 2
     if (!SPARK_WLAN_SLEEP) {
         resume = true;
     }
 #endif
+
     // Turn off the modem
     network_off(index, 0, 0, NULL);
     LOG(TRACE, "Waiting interface %d to be off...", (int)index);
