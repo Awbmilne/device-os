@@ -1747,6 +1747,14 @@ int SaraNcpClient::enterDataMode() {
     return r;
 }
 
+int SaraNcpClient::enterSleepyState() {
+    return muxer_.suspendChannel(UBLOX_NCP_AT_CHANNEL);
+}
+
+int SaraNcpClient::exitSleepyState() {
+    return muxer_.resumeChannel(UBLOX_NCP_AT_CHANNEL);
+}
+
 void SaraNcpClient::connectionState(NcpConnectionState state) {
     if (ncpState_ == NcpState::DISABLED) {
         return;
