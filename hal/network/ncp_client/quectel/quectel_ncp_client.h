@@ -70,8 +70,7 @@ public:
     virtual int setRegistrationTimeout(unsigned timeout) override;
     virtual int getTxDelayInDataChannel() override;
     virtual int enterDataMode() override;
-    virtual int enterSleepyState() override;
-    virtual int exitSleepyState() override;
+    virtual int urcs(bool enable) override;
 
     auto getMuxer() {
         return &muxer_;
